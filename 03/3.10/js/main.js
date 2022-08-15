@@ -17,7 +17,7 @@ const g = svg.append("g")
 
 // X label
 g.append("text")
-  .attr("class", "x axis-label")
+      .attr("class", "x axis-label")
   .attr("x", WIDTH / 2)
   .attr("y", HEIGHT + 110)
   .attr("font-size", "20px")

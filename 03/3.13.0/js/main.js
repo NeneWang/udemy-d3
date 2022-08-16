@@ -34,9 +34,12 @@ g.append("text")
   .attr("transform", "rotate(-90)")
   .text("Height (m)")
 
-d3.json("data/buildings.json").then(data => {
+// d3.json("data/buildings.json").then(data => {
+d3.csv("data/revenues.csv").then(data => {
   data.forEach(d => {
-    d.height = Number(d.height)
+    console.log(d)
+    d.name = d.month
+    d.height = Number(d.profit)
   })
 
   const x = d3.scaleBand()

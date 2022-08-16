@@ -99,7 +99,7 @@ function update(data) {
 
   // ENTER new elements present in new data...
   rects.enter().append("circle")
-    .attr("fill", "grey")
+    .attr("fill", "green")
     .attr("cy", y(0))
     .attr("r", 5)
     // AND UPDATE old elements present in new data.

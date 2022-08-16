@@ -1,14 +1,12 @@
 /*
 *    main.js
 *    Mastering Data Visualization with D3.js
-*    5.7 - D3 Transitions
+*    Project 2 - Gapminder Clone
 */
 
 const MARGIN = { LEFT: 100, RIGHT: 10, TOP: 10, BOTTOM: 100 }
-const WIDTH = 600 - MARGIN.LEFT - MARGIN.RIGHT
-const HEIGHT = 400 - MARGIN.TOP - MARGIN.BOTTOM
-
-let flag = true
+const WIDTH = 800 - MARGIN.LEFT - MARGIN.RIGHT
+const HEIGHT = 500 - MARGIN.TOP - MARGIN.BOTTOM
 
 const svg = d3.select("#chart-area").append("svg")
   .attr("width", WIDTH + MARGIN.LEFT + MARGIN.RIGHT)
@@ -17,97 +15,101 @@ const svg = d3.select("#chart-area").append("svg")
 const g = svg.append("g")
   .attr("transform", `translate(${MARGIN.LEFT}, ${MARGIN.TOP})`)
 
-// X label
-g.append("text")
-  .attr("class", "x axis-label")
-  .attr("x", WIDTH / 2)
-  .attr("y", HEIGHT + 60)
-  .attr("font-size", "20px")
-  .attr("text-anchor", "middle")
-  .text("GDP Per Capita ($)")
+let time = 0
 
-// Y label
-const yLabel = g.append("text")
-  .attr("class", "y axis-label")
-  .attr("x", - (HEIGHT / 2))
-  .attr("y", -60)
-  .attr("font-size", "20px")
-  .attr("text-anchor", "middle")
-  .attr("transform", "rotate(-90)")
-
-const x = d3.scaleBand()
-  .range([0, WIDTH])
-  .paddingInner(0.3)
-  .paddingOuter(0.2)
-
+// Scales
+const x = d3.scaleLog()
+	.base(10)
+	.range([0, WIDTH])
+	.domain([142, 150000])
 const y = d3.scaleLinear()
-  .range([HEIGHT, 0])
+	.range([HEIGHT, 0])
+	.domain([0, 90])
+const area = d3.scaleLinear()
+	.range([25*Math.PI, 1500*Math.PI])
+	.domain([2000, 1400000000])
+const continentColor = d3.scaleOrdinal(d3.schemePastel1)
 
-const xAxisGroup = g.append("g")
-  .attr("class", "x axis")
-  .attr("transform", `translate(0, ${HEIGHT})`)
+// Labels
+const xLabel = g.append("text")
+	.attr("y", HEIGHT + 50)
+	.attr("x", WIDTH / 2)
+	.attr("font-size", "20px")
+	.attr("text-anchor", "middle")
+	.text("GDP Per Capita ($)")
+const yLabel = g.append("text")
+	.attr("transform", "rotate(-90)")
+	.attr("y", -40)
+	.attr("x", -170)
+	.attr("font-size", "20px")
+	.attr("text-anchor", "middle")
+	.text("Life Expectancy (Years)")
+const timeLabel = g.append("text")
+	.attr("y", HEIGHT - 10)
+	.attr("x", WIDTH - 40)
+	.attr("font-size", "40px")
+	.attr("opacity", "0.4")
+	.attr("text-anchor", "middle")
+	.text("1800")
 
-const yAxisGroup = g.append("g")
-  .attr("class", "y axis")
+// X Axis
+const xAxisCall = d3.axisBottom(x)
+	.tickValues([400, 4000, 40000])
+	.tickFormat(d3.format("$"));
+g.append("g")
+	.attr("class", "x axis")
+	.attr("transform", `translate(0, ${HEIGHT})`)
+	.call(xAxisCall)
 
-d3.json("data/data.json").then(data => {
-  data.forEach(d => {
-    d.revenue = Number(d.revenue)
-    d.profit = Number(d.profit)
-  })
+// Y Axis
+const yAxisCall = d3.axisLeft(y)
+g.append("g")
+	.attr("class", "y axis")
+	.call(yAxisCall)
+d3.json("data/data.json").then(function(data){
+	// clean data
+	const formattedData = data.map(year => {
+		return year["countries"].filter(country => {
+			const dataExists = (country.income && country.life_exp)
+			return dataExists
+		}).map(country => {
+			country.income = Number(country.income)
+			country.life_exp = Number(country.life_exp)
+			return country
+		})
+	})
 
-  d3.interval(() => {
-    flag = !flag
-    const newData = flag ? data[1] : data[0]
-	console.log(newData)
-    update(newData)
-  }, 1000)
+let time=0
+d3.interval(function(){
+	// at the end of our data, loop back
+	time = (time < 214) ? time + 1 : 0
+	update(formattedData[time])
+}, 100)
 
-  update(data)
+// first run of the visualization
+update(formattedData[0])
 })
 
 function update(data) {
-//   const value = flag ? "profit" : "revenue"
-  const t = d3.transition().duration(750)
+	const t = d3.transition()
+		.duration(100)
 
-  x.domain([0, 40000])
-  y.domain([0, d3.max(data, d => d[value])])
+	// JOIN new data with old elements.
+	const circles = g.selectAll("circle")
+		.data(data, d => d.country)
 
-  const xAxisCall = d3.axisBottom(x)
-  xAxisGroup.transition(t).call(xAxisCall)
-    .selectAll("text")
-      .attr("cy", "10")
-      .attr("cx", "-5")
-      .attr("text-anchor", "end")
+	// EXIT old elements not present in new data.
+	circles.exit().remove()
 
-  const yAxisCall = d3.axisLeft(y)
-    .ticks(3)
-    .tickFormat(d => d + "m")
-  yAxisGroup.transition(t).call(yAxisCall)
+	// ENTER new elements present in new data.
+	circles.enter().append("circle")
+		.attr("fill", d => continentColor(d.continent))
+		.merge(circles)
+		.transition(t)
+			.attr("cy", d => y(d.life_exp))
+			.attr("cx", d => x(d.income))
+			.attr("r", d => Math.sqrt(area(d.population) / Math.PI))
 
-  // JOIN new data with old elements.
-  const rects = g.selectAll("circle")
-    .data(data, d => d.month)
-
-  // EXIT old elements not present in new data.
-  rects.exit()
-    .attr("fill", "red")
-    .transition(t)
-      .attr("height", 0)
-      .attr("cy", y(0))
-      .remove()
-
-  // ENTER new elements present in new data...
-  rects.enter().append("circle")
-    .attr("fill", "green")
-    .attr("cy", y(0))
-    .attr("r", 5)
-    // AND UPDATE old elements present in new data.
-    .merge(rects)
-    .transition(t)
-      .attr("cx", (d) => x(d.month))
-      .attr("cy", d => y(d[value]))
-
-  const text = "Life Expectancy"
-  yLabel.text(text)
+	// update the time label
+	timeLabel.text(String(time + 1800))
 }

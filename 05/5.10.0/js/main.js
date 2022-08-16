@@ -24,7 +24,7 @@ g.append("text")
   .attr("y", HEIGHT + 60)
   .attr("font-size", "20px")
   .attr("text-anchor", "middle")
-  .text("Month")
+  .text("GDP Per Capita ($)")
 
 // Y label
 const yLabel = g.append("text")
@@ -108,6 +108,6 @@ function update(data) {
       .attr("cx", (d) => x(d.month))
       .attr("cy", d => y(d[value]))
 
-  const text = flag ? "Profit ($)" : "Revenue ($)"
+  const text = "Life Expectancy"
   yLabel.text(text)
 }

@@ -75,7 +75,7 @@ const legend = g.append("g")
 continents.forEach((continent, i) => {
 	const legendRow = legend.append("g")
 		.attr("transform", `translate(0, ${i * 20})`)
-
+	console.log(i)
 	legendRow.append("rect")
     .attr("width", 10)
     .attr("height", 10)

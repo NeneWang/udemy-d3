@@ -84,7 +84,7 @@ d3.interval(function(){
 	// at the end of our data, loop back
 	time = (time < 214) ? time + 1 : 0
 	update(formattedData[time])
-}, 100)
+}, 200)
 
 // first run of the visualization
 update(formattedData[0])
